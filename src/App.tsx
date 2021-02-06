@@ -1,7 +1,8 @@
-import { createEvent, createStore } from "effector";
+import { createEffect, createEvent, createStore } from "effector";
 import { useStore } from "effector-react";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect } from "react";
 import { v4 as uuid } from "uuid";
+import Player from "./components/Player";
 
 type Todo = {
   id: string;
@@ -23,6 +24,15 @@ const createTodo = createEvent<Todo>();
 const removeTodo = createEvent<string>();
 const toggleTodo = createEvent<string>();
 
+// Effects
+const getTodosFx = createEffect<void, Todo[], Error>(async () => {
+  const res = await fetch("http://localhost:8080/todos");
+  return res.json();
+});
+
+getTodosFx.doneData.watch((payload) => console.log(payload));
+getTodosFx.failData.watch((payload) => console.log(payload));
+
 $todoInputValue
   .on(changeTodoInput, (_, payload) => {
     return payload;
@@ -38,17 +48,15 @@ $todos
     todos.map((todo) =>
       todo.id === id ? { ...todo, completed: !todo.completed } : todo
     )
-  );
+  )
+  .on(getTodosFx.doneData, (todos, newTodos) => {
+    return [...todos, ...newTodos];
+  });
 
 function App() {
   const todoInputValue = useStore($todoInputValue);
   const todos = useStore($todos);
   const completedTodos = useStore($completedTodos);
-  const [audioSource, setAudioSource] = useState("/music.mp3");
-  const [audio] = useState(new Audio(audioSource));
-  const [audioIsPlaying, setAudioIsPlaying] = useState(false);
-  const [audioSourceIsChanged, setAudioSourceIsChanged] = useState(false);
-  const prevAudioSource = useRef(audioSource);
 
   const handleSubmit = (evt: FormEvent<HTMLFormElement>) => {
     evt.preventDefault();
@@ -57,64 +65,13 @@ function App() {
   };
 
   useEffect(() => {
-    audio.addEventListener("ended", () => setAudioIsPlaying(false));
-    return () =>
-      audio.removeEventListener("ended", () => setAudioIsPlaying(false));
-  }, [audio]);
-
-  useEffect(() => {
-    if (audioIsPlaying) {
-      audio.play();
-    } else {
-      audio.pause();
-    }
-  }, [audioIsPlaying, audio]);
-
-  useEffect(() => {
-    if (audioSourceIsChanged) {
-      setAudioIsPlaying(true);
-      setAudioSourceIsChanged(false);
-    }
-  }, [audioSourceIsChanged]);
-
-  useEffect(() => {
-    if (audioSource !== prevAudioSource.current) {
-      setAudioIsPlaying(false);
-      audio.setAttribute("src", audioSource);
-      setAudioSourceIsChanged(true);
-    }
-  }, [audio, audioSource]);
-
-  const handleAudioPlay = () => {
-    setAudioIsPlaying(true);
-  };
-
-  const handleAudioPaused = () => {
-    setAudioIsPlaying(false);
-  };
-
-  const handlePlayNext = () => {
-    prevAudioSource.current = audioSource;
-    setAudioSource("/music2.mp3");
-  };
-
-  const handlePlayPrev = () => {
-    let prev = audioSource;
-    setAudioSource(prevAudioSource.current);
-    prevAudioSource.current = prev;
-  };
+    getTodosFx();
+  }, []);
 
   return (
     <div>
       <h1>Effector Sandbox</h1>
 
-      <h2>Audio is {audioIsPlaying ? "PLAY" : "PAUSED"}</h2>
-
-      <h2>Current time</h2>
-      <button onClick={handlePlayPrev}>PREV</button>
-      <button onClick={handleAudioPlay}>PLAY</button>
-      <button onClick={handleAudioPaused}>PAUSE</button>
-      <button onClick={handlePlayNext}>NEXT</button>
       <form onSubmit={handleSubmit}>
         <input
           type="text"
@@ -153,6 +110,8 @@ function App() {
       {completedTodos.map((todo) => (
         <p key={todo.id}>{todo.title}</p>
       ))}
+      <hr />
+      <Player />
     </div>
   );
 }
