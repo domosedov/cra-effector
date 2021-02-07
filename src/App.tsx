@@ -3,7 +3,7 @@ import { useStore } from "effector-react";
 import { FormEvent, useEffect } from "react";
 import { v4 as uuid } from "uuid";
 import Player from "./components/Player";
-import usePlayer from "./components/PlayerRef";
+import useAudio from "./components/useAudio";
 
 type Todo = {
   id: string;
@@ -72,11 +72,13 @@ function App() {
     currentTime,
     duration,
     source,
+    volume,
     changeSource,
     changeVolume,
     play,
     pause,
-  } = usePlayer();
+    seekTo,
+  } = useAudio();
 
   return (
     <div>
@@ -92,7 +94,7 @@ function App() {
         <button
           onClick={() =>
             changeSource(
-              "https://file-examples-com.github.io/uploads/2017/11/file_example_MP3_700KB.mp3"
+              "https://file-examples-com.github.io/uploads/2017/11/file_example_MP3_700KB.mp31"
             )
           }
         >
@@ -109,9 +111,6 @@ function App() {
         </button>
         <button onClick={() => play()}>PLAY</button>
         <button onClick={() => pause()}>PAUSE</button>
-        <button onClick={() => changeVolume(1)}>+</button>
-        <button onClick={() => changeVolume(0.5)}>-</button>
-        <button onClick={(evt) => console.log(evt)}>REact event</button>
         <button
           onClick={() =>
             changeSource(
@@ -121,6 +120,25 @@ function App() {
         >
           CHANGE IMPERATIVE
         </button>
+        <input
+          type="range"
+          min={0}
+          max={duration}
+          step={1}
+          value={currentTime}
+          onChange={(evt) => seekTo(+evt.target.value)}
+        />
+        <div>
+          <span>Volume:</span>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.1}
+            value={volume}
+            onChange={(evt) => changeVolume(+evt.target.value)}
+          />
+        </div>
 
         {/* <div
         style={{
