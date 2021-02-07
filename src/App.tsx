@@ -3,6 +3,7 @@ import { useStore } from "effector-react";
 import { FormEvent, useEffect } from "react";
 import { v4 as uuid } from "uuid";
 import Player from "./components/Player";
+import usePlayer from "./components/PlayerRef";
 
 type Todo = {
   id: string;
@@ -30,9 +31,6 @@ const getTodosFx = createEffect<void, Todo[], Error>(async () => {
   return res.json();
 });
 
-getTodosFx.doneData.watch((payload) => console.log(payload));
-getTodosFx.failData.watch((payload) => console.log(payload));
-
 $todoInputValue
   .on(changeTodoInput, (_, payload) => {
     return payload;
@@ -54,23 +52,96 @@ $todos
   });
 
 function App() {
-  const todoInputValue = useStore($todoInputValue);
-  const todos = useStore($todos);
-  const completedTodos = useStore($completedTodos);
+  // const todoInputValue = useStore($todoInputValue);
+  // const todos = useStore($todos);
+  // const completedTodos = useStore($completedTodos);
 
-  const handleSubmit = (evt: FormEvent<HTMLFormElement>) => {
-    evt.preventDefault();
-    createTodo({ id: uuid(), title: todoInputValue, completed: false });
-    clearTodoInput();
-  };
+  // const handleSubmit = (evt: FormEvent<HTMLFormElement>) => {
+  //   evt.preventDefault();
+  //   createTodo({ id: uuid(), title: todoInputValue, completed: false });
+  //   clearTodoInput();
+  // };
 
-  useEffect(() => {
-    getTodosFx();
-  }, []);
+  // useEffect(() => {
+  //   getTodosFx();
+  // }, []);
+
+  const {
+    isPlaying,
+    ref,
+    currentTime,
+    duration,
+    source,
+    changeSource,
+    changeVolume,
+    play,
+    pause,
+  } = usePlayer();
 
   return (
     <div>
-      <h1>Effector Sandbox</h1>
+      <div>
+        <h1>Player</h1>
+        <h2>Audio is {isPlaying ? "PLAY" : "PAUSED"}</h2>
+        <h2>Source {source}</h2>
+
+        <h2>
+          Current time {currentTime} / {duration}
+        </h2>
+        <audio ref={ref} autoPlay />
+        <button
+          onClick={() =>
+            changeSource(
+              "https://file-examples-com.github.io/uploads/2017/11/file_example_MP3_700KB.mp3"
+            )
+          }
+        >
+          Set Track
+        </button>
+        <button
+          onClick={() =>
+            changeSource(
+              "https://file-examples-com.github.io/uploads/2017/11/file_example_MP3_5MG.mp3"
+            )
+          }
+        >
+          Set NEW Track
+        </button>
+        <button onClick={() => play()}>PLAY</button>
+        <button onClick={() => pause()}>PAUSE</button>
+        <button onClick={() => changeVolume(1)}>+</button>
+        <button onClick={() => changeVolume(0.5)}>-</button>
+        <button onClick={(evt) => console.log(evt)}>REact event</button>
+        <button
+          onClick={() =>
+            changeSource(
+              "https://file-examples-com.github.io/uploads/2017/11/file_example_MP3_5MG.mp3"
+            )
+          }
+        >
+          CHANGE IMPERATIVE
+        </button>
+
+        {/* <div
+        style={{
+          width: "500px",
+          height: "20px",
+          backgroundColor: "gray",
+          border: "1px solid black",
+          marginTop: "20px",
+        }}
+      >
+        <div
+          style={{
+            height: "100%",
+            backgroundColor: "red",
+            width: `${Math.round((currentTime * 100) / duration)}%`,
+          }}
+        ></div>
+      </div> */}
+      </div>
+
+      {/* <h1>Effector Sandbox</h1>
 
       <form onSubmit={handleSubmit}>
         <input
@@ -110,8 +181,7 @@ function App() {
       {completedTodos.map((todo) => (
         <p key={todo.id}>{todo.title}</p>
       ))}
-      <hr />
-      <Player />
+      <hr /> */}
     </div>
   );
 }
